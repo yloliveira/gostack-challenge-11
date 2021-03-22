@@ -6,7 +6,10 @@ import { useNavigation } from '@react-navigation/native';
 import Logo from '../../assets/logo-header.png';
 import SearchInput from '../../components/SearchInput';
 
-import api from '../../services/api';
+import IFood from '../../dtos/IFoodDTO';
+import ICategory from '../../dtos/ICategoryDTO';
+import foodsService from '../../services/foods';
+import categoriesService from '../../services/categories';
 import formatValue from '../../utils/formatValue';
 
 import {
@@ -28,24 +31,9 @@ import {
   FoodPricing,
 } from './styles';
 
-interface Food {
-  id: number;
-  name: string;
-  description: string;
-  price: number;
-  thumbnail_url: string;
-  formattedPrice: string;
-}
-
-interface Category {
-  id: number;
-  title: string;
-  image_url: string;
-}
-
 const Dashboard: React.FC = () => {
-  const [foods, setFoods] = useState<Food[]>([]);
-  const [categories, setCategories] = useState<Category[]>([]);
+  const [foods, setFoods] = useState<IFood[]>([]);
+  const [categories, setCategories] = useState<ICategory[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<
     number | undefined
   >();
@@ -54,12 +42,18 @@ const Dashboard: React.FC = () => {
   const navigation = useNavigation();
 
   async function handleNavigate(id: number): Promise<void> {
-    // Navigate do ProductDetails page
+    navigation.navigate('FoodDetails', { id });
   }
 
   useEffect(() => {
     async function loadFoods(): Promise<void> {
-      // Load Foods from API
+      const response = await foodsService.list({
+        category_like: selectedCategory,
+        name_like: searchValue,
+      });
+      if (response.length) {
+        setFoods(response);
+      }
     }
 
     loadFoods();
@@ -67,14 +61,20 @@ const Dashboard: React.FC = () => {
 
   useEffect(() => {
     async function loadCategories(): Promise<void> {
-      // Load categories from API
+      const response = await categoriesService.list();
+      if (response.length) {
+        setCategories(response);
+      }
     }
 
     loadCategories();
   }, []);
 
   function handleSelectCategory(id: number): void {
-    // Select / deselect category
+    setSelectedCategory(prevState => {
+      if (prevState === id) return undefined;
+      return id;
+    });
   }
 
   return (
